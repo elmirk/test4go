@@ -30,10 +30,6 @@ type Ack struct {
 	OK   bool
 }
 
-// -------------------------
-// SERIALIZE DATA PACKET
-// -------------------------
-
 func SerializePacket(p Packet) ([]byte, error) {
 	if p.Type != TypeData {
 		return nil, fmt.Errorf("only TypeData supported")
@@ -63,10 +59,6 @@ func SerializePacket(p Packet) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-// -------------------------
-// DESERIALIZE DATA PACKET
-// -------------------------
-
 func DeserializePacket(b []byte) (Packet, error) {
 	var p Packet
 
@@ -77,7 +69,6 @@ func DeserializePacket(b []byte) (Packet, error) {
 
 	reader := bytes.NewReader(b)
 
-	// type
 	t, err := reader.ReadByte()
 	if err != nil {
 		return p, err
@@ -98,14 +89,8 @@ func DeserializePacket(b []byte) (Packet, error) {
 		return p, err
 	}
 
-	// 👇 ЯВНО читаем длину
 	if err := binary.Read(reader, binary.BigEndian, &p.DataLen); err != nil {
 		return p, err
-	}
-
-	// защита от мусора / атак / битых пакетов
-	if p.DataLen > 1200 {
-		return p, fmt.Errorf("invalid DataLen: too large")
 	}
 
 	// data
@@ -122,10 +107,6 @@ func DeserializePacket(b []byte) (Packet, error) {
 	return p, nil
 }
 
-// -------------------------
-// HASH
-// -------------------------
-
 func CalculateHash(id uint32, ts int64, data []byte) [32]byte {
 	buf := new(bytes.Buffer)
 
@@ -135,10 +116,6 @@ func CalculateHash(id uint32, ts int64, data []byte) [32]byte {
 
 	return sha256.Sum256(buf.Bytes())
 }
-
-// -------------------------
-// ACK
-// -------------------------
 
 func SerializeAck(id uint32, ok bool) []byte {
 	buf := new(bytes.Buffer)
@@ -159,10 +136,7 @@ func SerializeAck(id uint32, ok bool) []byte {
 	return buf.Bytes()
 }
 
-// -------------------------
-// PING
-// -------------------------
-
+//ping
 func SerializePing() []byte {
 	return []byte{byte(TypePing)}
 }
