@@ -7,9 +7,9 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"os"
 	"runtime"
-        "time"
-        "os"
+	"time"
 )
 
 const (
@@ -18,11 +18,10 @@ const (
 )
 
 const (
-        TypePing byte = 1
-        TypeData byte = 2
-        TypeAck  byte = 3
+	TypePing byte = 1
+	TypeData byte = 2
+	TypeAck  byte = 3
 )
-
 
 type PacketJob struct {
 	Data []byte
@@ -30,13 +29,12 @@ type PacketJob struct {
 }
 
 type Packet struct {
-        ID        uint32
-        Timestamp int64
-        DataLen uint32
-        Data      []byte
-        Hash      [32]byte
+	ID        uint32
+	Timestamp int64
+	DataLen   uint32
+	Data      []byte
+	Hash      [32]byte
 }
-
 
 var (
 	incoming = make(chan PacketJob, 10000)
@@ -54,27 +52,27 @@ func main() {
 	}
 	defer conn.Close()
 
-        fmt.Printf("[SERVER] started on %s\n", addr)
+	fmt.Printf("[SERVER] started on %s\n", addr)
 
 	workers := workerCount
 	if workers == 0 {
 		workers = runtime.NumCPU()
 	}
 
-        fmt.Printf("[SERVER] starting %d workers\n", workers)
-	
+	fmt.Printf("[SERVER] starting %d workers\n", workers)
+
 	for i := 0; i < workers; i++ {
 		go worker(conn)
 	}
 
-        fmt.Println("[SERVER] workers started, waiting for packets...")
+	fmt.Println("[SERVER] workers started, waiting for packets...")
 
 	go func() {
 		buf := make([]byte, 65535)
 
 		for {
 			n, addr, err := conn.ReadFromUDP(buf)
-   
+
 			if err != nil {
 				continue
 			}
@@ -89,15 +87,15 @@ func main() {
 		}
 	}()
 
-        fmt.Println("[SERVER] UDP listener active, ready to receive data")
+	fmt.Println("[SERVER] UDP listener active, ready to receive data")
 	select {}
 }
 
-//worker function
+// worker function
 func worker(conn *net.UDPConn) {
 	for job := range incoming {
 
-                start := time.Now()
+		start := time.Now()
 		p, err := deserialize(job.Data)
 
 		if err != nil {
@@ -107,17 +105,17 @@ func worker(conn *net.UDPConn) {
 		ok := validate(p)
 		ack := buildAck(p.ID, ok)
 
-                fmt.Printf(
-                   "packet=%d created=%s received=%s integrity=%v size=%d\n",
-                   p.ID,
-                   time.Unix(0, p.Timestamp).Format(time.RFC3339Nano),
-                   start.Format(time.RFC3339Nano),
-                   ok,
-                   p.DataLen,
-                 )
-                 os.Stdout.Sync()
+		fmt.Printf(
+			"packet=%d created=%s received=%s integrity=%v size=%d\n",
+			p.ID,
+			time.Unix(0, p.Timestamp).Format(time.RFC3339Nano),
+			start.Format(time.RFC3339Nano),
+			ok,
+			p.DataLen,
+		)
+		os.Stdout.Sync()
 
-        	_, _ = conn.WriteToUDP(ack, job.Addr)
+		_, _ = conn.WriteToUDP(ack, job.Addr)
 	}
 }
 
@@ -158,7 +156,7 @@ func deserialize(data []byte) (*Packet, error) {
 	return &Packet{
 		ID:        id,
 		Timestamp: ts,
-                DataLen:   dataLen,
+		DataLen:   dataLen,
 		Data:      payload,
 		Hash:      hash,
 	}, nil
@@ -173,25 +171,23 @@ func validate(p *Packet) bool {
 
 	sum := h.Sum(nil)
 
-       	return bytes.Equal(sum, p.Hash[:])
+	return bytes.Equal(sum, p.Hash[:])
 }
 
 func buildAck(id uint32, ok bool) []byte {
 	buf := make([]byte, 0, 6)
 
-        buf = append(buf, TypeAck)
+	buf = append(buf, TypeAck)
 
 	if ok {
 		buf = append(buf, 1)
 	} else {
-                buf = append(buf, 0)
-        }
+		buf = append(buf, 0)
+	}
 
-        idBytes := make([]byte, 4)
-        binary.BigEndian.PutUint32(idBytes, id)
+	idBytes := make([]byte, 4)
+	binary.BigEndian.PutUint32(idBytes, id)
 
-        buf = append(buf, idBytes...)
+	buf = append(buf, idBytes...)
 	return buf
 }
-
-

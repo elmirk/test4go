@@ -18,17 +18,16 @@ import (
 //quality counters
 
 var (
-	totalSent uint32
-	totalAcked uint32
+	totalSent   uint32
+	totalAcked  uint32
 	totalFailed uint32
 )
 
-
 const (
-	serverAddr   = "127.0.0.1:9000"
-//	totalPackets = 10000
+	serverAddr = "127.0.0.1:9000"
+	//	totalPackets = 10000
 	totalPackets = 10000
-        workersCount = 10
+	workersCount = 10
 
 	retryTimeout = 500 * time.Millisecond
 	maxRetries   = 5
@@ -59,7 +58,7 @@ var (
 
 func main() {
 	addr, err := net.ResolveUDPAddr("udp", serverAddr)
-        fmt.Println("sending to:", addr)
+	fmt.Println("sending to:", addr)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -106,10 +105,10 @@ func main() {
 				statesMu.Unlock()
 
 				select {
-		case sendQueue <- packet:
-		case <-time.After(10 * time.Millisecond):
-			
-		}
+				case sendQueue <- packet:
+				case <-time.After(10 * time.Millisecond):
+
+				}
 			}
 		}()
 	}
@@ -138,13 +137,13 @@ func main() {
 		}
 	}
 
-acked_ratio := float64(totalAcked) / float64(totalPackets) * 100
+	acked_ratio := float64(totalAcked) / float64(totalPackets) * 100
 
-fmt.Printf("\n--- STATS ---\n")
-fmt.Printf("total packets: %d\n", totalPackets)
-fmt.Printf("sent: %d\n", totalSent)
-fmt.Printf("acked: %d\n", totalAcked)
-fmt.Printf("acked_ratio: %.2f%%\n", acked_ratio)
+	fmt.Printf("\n--- STATS ---\n")
+	fmt.Printf("total packets: %d\n", totalPackets)
+	fmt.Printf("sent: %d\n", totalSent)
+	fmt.Printf("acked: %d\n", totalAcked)
+	fmt.Printf("acked_ratio: %.2f%%\n", acked_ratio)
 
 }
 
@@ -187,23 +186,22 @@ func generatePacket(id uint32) protocol.Packet {
 	}
 }
 
-
 func sender(conn *net.UDPConn, sendQueue <-chan protocol.Packet) {
 	for packet := range sendQueue {
 		raw, err := protocol.SerializePacket(packet)
-//                fmt.Println("sender: client send data:", raw[:20])
+		//                fmt.Println("sender: client send data:", raw[:20])
 
 		if err != nil {
 			continue
 		}
 
 		_, err = conn.Write(raw)
-                //fmt.Println("sender: sent:", n, "err:", err)
+		//fmt.Println("sender: sent:", n, "err:", err)
 		if err != nil {
 			continue
 		}
 
-                atomic.AddUint32(&totalSent, 1)
+		atomic.AddUint32(&totalSent, 1)
 
 		statesMu.Lock()
 
@@ -305,7 +303,6 @@ func ackListener(conn *net.UDPConn, results chan<- Result) {
 		}
 	}
 }
-
 
 func waitServer(conn *net.UDPConn) error {
 	testPacket := []byte("PING")

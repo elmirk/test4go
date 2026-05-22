@@ -136,7 +136,7 @@ func SerializeAck(id uint32, ok bool) []byte {
 	return buf.Bytes()
 }
 
-//ping
+// ping
 func SerializePing() []byte {
 	return []byte{byte(TypePing)}
 }
